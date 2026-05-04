@@ -1,0 +1,11 @@
+{
+  "refuse_threshold": 0.2,
+  "k": 3,
+  "recall_at_1": 1.0,
+  "recall_at_3": 1.0,
+  "answer_correctness_in_corpus": 1.0,
+  "refusal_rate_out_of_corpus": 0.5,
+  "hallucination_rate_out_of_corpus": 0.5,
+  "n_in_corpus_questions": 10,
+  "n_out_of_corpus_questions": 4
+}
