@@ -13,6 +13,10 @@
 
 ---
 
+<p align="center">
+  <a href="https://linnps.github.io/ml-08-rag-llm/"><img src="https://img.shields.io/badge/View_Live_Dashboard-0E2841?style=for-the-badge&amp;logo=githubpages&amp;logoColor=white" alt="View live dashboard"></a>
+</p>
+
 ## At a glance
 
 > Build a complete RAG pipeline over an invented corpus (the handbook of a fictional logistics company called *Aetherline*) and test it with **two kinds of questions**: ones whose answers are in the corpus, and ones whose answers *aren't*. The first set measures retrieval quality. The second set measures the system's willingness to refuse rather than hallucinate.
