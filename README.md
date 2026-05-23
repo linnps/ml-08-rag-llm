@@ -17,33 +17,12 @@
 
 > Build a complete RAG pipeline over an invented corpus (the handbook of a fictional logistics company called *Aetherline*) and test it with **two kinds of questions**: ones whose answers are in the corpus, and ones whose answers *aren't*. The first set measures retrieval quality. The second set measures the system's willingness to refuse rather than hallucinate.
 
-<table>
-<tr>
-<td align="center" width="33%">
-<sub>Recall @ 1 (in-corpus)</sub><br>
-<b style="font-size:1.6em; color:#3B6EA8;">100%</b><br>
-<sub>top-1 chunk is correct on every in-corpus query</sub>
-</td>
-<td align="center" width="33%">
-<sub>Answer correctness (in-corpus)</sub><br>
-<b style="font-size:1.6em; color:#3B6EA8;">100%</b><br>
-<sub>extracted sentence comes from the right doc</sub>
-</td>
-<td align="center" width="33%">
-<sub>Hallucination rate (out-of-corpus)</sub><br>
-<b style="font-size:1.6em; color:#C04040;">50%</b><br>
-<sub>TF-IDF threshold isn't sharp enough</sub>
-</td>
-</tr>
-</table>
-
-| Slice | Metric | Value |
-|---|---|---:|
-| In-corpus | Retrieval recall@1 | **1.000** |
-| In-corpus | Retrieval recall@3 | **1.000** |
-| In-corpus | Answer correctness | **1.000** |
-| Out-of-corpus | Refusal rate | 0.500 |
-| Out-of-corpus | **Hallucination rate** | **0.500** |
+<p align="center">
+  <img src="https://img.shields.io/badge/Recall%401-1.00-3B6EA8?style=for-the-badge" alt="Recall@1 1.00">
+  <img src="https://img.shields.io/badge/Recall%403-1.00-3B6EA8?style=for-the-badge" alt="Recall@3 1.00">
+  <img src="https://img.shields.io/badge/Out--of--corpus_refusal_rate-0.50-C04040?style=for-the-badge" alt="Out-of-corpus refusal rate 0.50">
+</p>
+<p align="center"><sub>Recall%40k &rarr; in-corpus retrieval (k = 3)&nbsp;&middot;&nbsp;refusal rate &rarr; fraction of unanswerable queries correctly refused&nbsp;&middot;&nbsp;50 % hallucination = the honest weak spot</sub></p>
 
 <sub>**Headline finding:** the retriever is *perfect* on questions whose answers exist in the corpus. The interesting (and honest) result is the 50% hallucination rate on questions whose answers *don't* exist — TF-IDF cosine similarity isn't a sharp enough signal to reliably distinguish "no relevant content" from "marginally relevant content." This is the single most important production-RAG problem, and it's visible right here on a 14-question evaluation.</sub>
 
@@ -111,6 +90,40 @@ There is **no LLM call**. Generation is fully deterministic: the best single sen
 ---
 
 ## Dashboard
+
+### Retrieval & honesty scorecard
+
+<table>
+<tr>
+  <th align="left">Group</th>
+  <th>Metric</th>
+  <th align="center">Value</th>
+</tr>
+<tr>
+  <td rowspan="3"><b>In-corpus</b></td>
+  <td>Recall@1</td>
+  <td align="center"><img src="https://img.shields.io/badge/1.00-3B6EA8?style=flat-square" alt="1.00"></td>
+</tr>
+<tr>
+  <td>Recall@3</td>
+  <td align="center"><img src="https://img.shields.io/badge/1.00-3B6EA8?style=flat-square" alt="1.00"></td>
+</tr>
+<tr>
+  <td>Answer correctness</td>
+  <td align="center"><img src="https://img.shields.io/badge/1.00-3B6EA8?style=flat-square" alt="1.00"></td>
+</tr>
+<tr>
+  <td rowspan="2"><b>Out-of-corpus</b></td>
+  <td>Refusal rate</td>
+  <td align="center"><img src="https://img.shields.io/badge/0.50-C04040?style=flat-square" alt="0.50"></td>
+</tr>
+<tr>
+  <td>Hallucination rate</td>
+  <td align="center"><img src="https://img.shields.io/badge/0.50-C04040?style=flat-square" alt="0.50"></td>
+</tr>
+</table>
+
+<sub>Blue = good &middot; Red = attention &middot; In-corpus metrics: higher is better &middot; Hallucination rate: lower is better &middot; values from <code>results/metrics.json</code></sub>
 
 ### 1. The corpus
 
