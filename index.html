@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ML 08 · RAG / LLM Retrieval — Dashboard</title>
+<style>
+  :root{
+    --navy:#0E2841; --navy2:#14385B; --navy3:#1C4A75;
+    --orange:#ED7D31; --orange2:#F4A26B;
+    --blue:#9DC3E6; --bg:#EEF1F4; --card:#FFFFFF;
+    --text:#1A2733; --muted:#6B7B8C; --line:#E2E7EC;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,Helvetica,Arial,sans-serif;
+       background:var(--bg);color:var(--text);display:flex;min-height:100vh}
+  /* ---- sidebar ---- */
+  .sidebar{width:210px;flex-shrink:0;background:var(--navy);color:#fff;
+           display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+  .brand{padding:22px 20px 18px 20px;border-bottom:1px solid rgba(255,255,255,.08)}
+  .brand .n{font-size:12px;letter-spacing:2px;color:var(--orange);font-weight:700}
+  .brand .t{font-size:17px;font-weight:700;margin-top:4px;line-height:1.25}
+  nav{padding:10px 0;flex:1}
+  nav a{display:flex;align-items:center;gap:10px;padding:13px 20px;color:#C5D2DE;
+        cursor:pointer;font-size:14px;font-weight:600;border-left:3px solid transparent;
+        user-select:none;transition:background .12s}
+  nav a:hover{background:rgba(255,255,255,.05);color:#fff}
+  nav a.active{background:var(--orange);color:#fff;border-left-color:#fff}
+  nav a .ic{font-size:16px;width:18px;text-align:center}
+  .side-foot{padding:16px 20px;font-size:11px;color:#7E93A8;border-top:1px solid rgba(255,255,255,.08)}
+  .side-foot a{color:var(--blue);text-decoration:none}
+  /* ---- main ---- */
+  .main{flex:1;padding:26px 30px 50px 30px;max-width:1180px}
+  .topbar{display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;
+          border-bottom:2px solid var(--line);padding-bottom:16px;margin-bottom:22px}
+  .topbar h1{font-size:25px;font-weight:800;color:var(--navy)}
+  .topbar .sub{font-size:13px;color:var(--muted);margin-top:4px}
+  .topbar .meta{font-size:12px;color:var(--muted);text-align:right;line-height:1.7}
+  .topbar .meta b{color:var(--navy)}
+  /* ---- panels ---- */
+  .panel{display:none;animation:fade .2s ease}
+  .panel.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  .panel h2{font-size:13px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);
+            margin:26px 0 12px 0;font-weight:700}
+  .panel h2:first-child{margin-top:0}
+  /* ---- KPI cards ---- */
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .kpi{border-radius:8px;padding:18px 16px;text-align:center;color:#fff;
+       box-shadow:0 1px 3px rgba(14,40,65,.12)}
+  .kpi .v{font-size:30px;font-weight:800;line-height:1}
+  .kpi .l{font-size:12.5px;font-weight:600;margin-top:8px;opacity:.92}
+  .kpi .s{font-size:11px;margin-top:5px;opacity:.8}
+  .kpi.navy{background:var(--navy)} .kpi.orange{background:var(--orange)}
+  .kpi.blue{background:var(--blue);color:var(--navy)}
+  /* ---- cards ---- */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px 18px;
+        margin-top:14px;box-shadow:0 1px 2px rgba(14,40,65,.05)}
+  .card h3{font-size:15px;color:var(--navy);font-weight:700}
+  .card .cap{font-size:12.5px;color:var(--muted);margin:4px 0 10px 0}
+  .card img{width:100%;border:1px solid var(--line);border-radius:5px;margin-top:6px}
+  /* ---- table ---- */
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:6px}
+  th,td{padding:9px 10px;text-align:center;border-bottom:1px solid var(--line)}
+  th{background:var(--navy);color:#fff;font-weight:600;font-size:12.5px}
+  th:first-child,td:first-child{text-align:left}
+  tbody tr:nth-child(even){background:#F6F8FA}
+  .pill{display:inline-block;padding:3px 9px;border-radius:11px;font-weight:700;font-size:12.5px;color:#fff}
+  .p-navy{background:var(--navy)} .p-orange{background:var(--orange)}
+  .p-blue{background:var(--blue);color:var(--navy)} .p-gray{background:#9AA8B5}
+  .legend{font-size:12px;color:var(--muted);margin-top:9px}
+  .note{background:#FBF3EC;border-left:3px solid var(--orange);padding:11px 14px;border-radius:0 6px 6px 0;
+        font-size:13.5px;line-height:1.6;margin-top:14px}
+  pre{background:var(--navy);color:#E7EEF5;padding:14px 16px;border-radius:7px;overflow:auto;
+      font-size:12.5px;line-height:1.6;margin-top:10px;font-family:"SF Mono",Consolas,monospace}
+  pre .c{color:#7E9CB8}
+  code{background:#E7ECF1;padding:1px 5px;border-radius:3px;font-size:12.5px;
+       font-family:"SF Mono",Consolas,monospace}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:780px){.kpis{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}
+    .sidebar{width:64px}.brand .t,nav a span.tx,.side-foot{display:none}}
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="brand"><div class="n">ML · 08</div><div class="t">RAG / LLM Retrieval</div></div>
+  <nav>
+    <a data-p="overview" class="active"><span class="ic">▣</span><span class="tx">Overview</span></a>
+    <a data-p="charts"><span class="ic">▤</span><span class="tx">Charts</span></a>
+    <a data-p="validation"><span class="ic">✓</span><span class="tx">Validation</span></a>
+    <a data-p="reproduce"><span class="ic">⚙</span><span class="tx">Reproduce</span></a>
+  </nav>
+  <div class="side-foot">Part of a 10-project ML portfolio<br><a href="https://github.com/linnps/ml-08-rag-llm">View on GitHub →</a></div>
+</aside>
+
+<main class="main">
+  <div class="topbar">
+    <div>
+      <h1>RAG / LLM Retrieval — Retrieval-Augmented Generation</h1>
+      <div class="sub">TF-IDF retrieval · rule-based generation · in-corpus vs. out-of-corpus evaluation</div>
+    </div>
+    <div class="meta">CORPUS: <b>8 docs · 17 chunks · 14 questions</b><br>Self-authored · deterministic (no RNG seed)<br>10 in-corpus · 4 out-of-corpus questions</div>
+  </div>
+
+  <!-- ===================== OVERVIEW ===================== -->
+  <section class="panel active" id="overview">
+    <div class="kpis">
+      <div class="kpi blue"><div class="v">1.00</div><div class="l">Recall@1</div><div class="s">In-corpus · 10 questions</div></div>
+      <div class="kpi navy"><div class="v">1.00</div><div class="l">Recall@3</div><div class="s">In-corpus · 10 questions</div></div>
+      <div class="kpi orange"><div class="v">0.50</div><div class="l">Out-of-corpus refusal rate</div><div class="s">Weak spot · 50% hallucination</div></div>
+    </div>
+
+    <h2>Retrieval &amp; honesty scorecard</h2>
+    <div class="card">
+      <table>
+        <thead><tr><th>Group</th><th>Metric</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td><b>In-corpus</b></td><td>Recall@1</td><td><span class="pill p-navy">1.00</span></td></tr>
+          <tr><td><b>In-corpus</b></td><td>Recall@3</td><td><span class="pill p-blue">1.00</span></td></tr>
+          <tr><td><b>In-corpus</b></td><td>Answer correctness</td><td><span class="pill p-navy">1.00</span></td></tr>
+          <tr><td><b>Out-of-corpus</b></td><td>Refusal rate</td><td><span class="pill p-orange">0.50</span></td></tr>
+          <tr><td><b>Out-of-corpus</b></td><td>Hallucination rate</td><td><span class="pill p-orange">0.50</span></td></tr>
+        </tbody>
+      </table>
+      <div class="legend">● navy/blue = good (in-corpus) &nbsp; ● orange = attention (out-of-corpus) &nbsp;·&nbsp; values from <code>results/metrics.json</code></div>
+    </div>
+
+    <div class="note"><b>Headline finding:</b> the retriever is <i>perfect</i> on questions whose answers exist in the corpus — Recall@1 and Recall@3 both hit 1.00. The honest weak spot is the 50% hallucination rate on out-of-corpus questions. TF-IDF cosine similarity isn't a sharp enough signal to reliably distinguish "no relevant content" from "marginally relevant content." This is the single most important production-RAG problem, and it's visible right here on a 14-question evaluation.</div>
+  </section>
+
+  <!-- ===================== CHARTS ===================== -->
+  <section class="panel" id="charts">
+    <h2>Visual diagnostics</h2>
+    <div class="card"><h3>1 · The corpus — 8 documents, 17 chunks</h3><div class="cap">8 short documents about the invented company <i>Aetherline Logistics</i>. Every fact is self-authored, giving complete ground truth over which doc answers each question.</div><img src="assets/01_corpus.png" alt="corpus"></div>
+    <div class="card"><h3>2 · TF-IDF chunk embeddings (2-D SVD projection)</h3><div class="cap">Chunks from the same document cluster together. Product docs land on the right; procedure and people docs cluster on the left — qualitative groupings are visible even with only 17 chunks.</div><img src="assets/02_embeddings.png" alt="embeddings"></div>
+    <div class="grid2">
+      <div class="card"><h3>3 · RAG pipeline evaluation</h3><div class="cap">Five metrics on one plot: in-corpus recall and correctness all hit 100%; refusal rate on out-of-corpus questions sits at 50%.</div><img src="assets/03_eval.png" alt="evaluation"></div>
+      <div class="card"><h3>4 · Score histogram — why hallucination happens</h3><div class="cap">The two distributions overlap around the 0.20 threshold. Out-of-corpus questions with overlapping vocabulary score above the refusal threshold — TF-IDF can't detect missing <i>meaning</i>.</div><img src="assets/04_scores.png" alt="scores"></div>
+    </div>
+  </section>
+
+  <!-- ===================== VALIDATION ===================== -->
+  <section class="panel" id="validation">
+    <h2>Metric definitions</h2>
+    <div class="card">
+      <h3>In-corpus metrics (10 questions)</h3>
+      <div class="cap">All computed over questions where a ground-truth relevant document exists.</div>
+      <table>
+        <thead><tr><th>Metric</th><th>Definition</th><th>Reads as</th></tr></thead>
+        <tbody>
+          <tr><td><b>Recall@1</b></td><td>Fraction where top-1 chunk comes from the correct doc</td><td>1 = perfect top-1 retrieval</td></tr>
+          <tr><td><b>Recall@3</b></td><td>Fraction where correct doc appears in top-3 results</td><td>Always ≥ Recall@1; 1 = correct doc always in top-3</td></tr>
+          <tr><td><b>Answer correctness</b></td><td>Extracted sentence source matches truth doc and not refused</td><td>Stricter than Recall@1; sentence-selection pass must also route correctly</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <h3>Out-of-corpus metrics (4 questions)</h3>
+      <div class="cap">Computed over questions where refusal is the correct action (no answer exists in the corpus).</div>
+      <table>
+        <thead><tr><th>Metric</th><th>Definition</th><th>Reads as</th></tr></thead>
+        <tbody>
+          <tr><td><b>Refusal rate</b></td><td>Fraction of out-of-corpus questions where top-1 cosine &lt; threshold τ = 0.20</td><td>0.50 = half correctly refused; half hallucinated</td></tr>
+          <tr><td><b>Hallucination rate</b></td><td>1 − refusal rate</td><td>Fraction where system answered instead of refusing</td></tr>
+        </tbody>
+      </table>
+      <div class="note" style="margin-top:8px">No MRR or nDCG: with a single canonical answer document per question and only 17 chunks, Recall@k is the appropriate and sufficient metric. MRR/nDCG add meaningful signal only when ground-truth relevance has graded values or multiple relevant documents.</div>
+    </div>
+    <h2>Full results</h2>
+    <div class="card">
+      <table>
+        <thead><tr><th>Slice</th><th>Metric</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>In-corpus (10 questions)</td><td>Recall@1</td><td><span class="pill p-navy">1.0</span></td></tr>
+          <tr><td>In-corpus (10 questions)</td><td>Recall@3</td><td><span class="pill p-navy">1.0</span></td></tr>
+          <tr><td>In-corpus (10 questions)</td><td>Answer correctness</td><td><span class="pill p-navy">1.0</span></td></tr>
+          <tr><td>Out-of-corpus (4 questions)</td><td>Refusal rate</td><td><span class="pill p-orange">0.5</span></td></tr>
+          <tr><td>Out-of-corpus (4 questions)</td><td>Hallucination rate</td><td><span class="pill p-orange">0.5</span></td></tr>
+        </tbody>
+      </table>
+      <div class="legend">Pipeline parameters: <code>k = 3</code>, <code>refuse_threshold = 0.20</code> &nbsp;·&nbsp; values from <code>results/metrics.json</code> &nbsp;·&nbsp; fully deterministic — no random seed needed</div>
+    </div>
+  </section>
+
+  <!-- ===================== REPRODUCE ===================== -->
+  <section class="panel" id="reproduce">
+    <h2>Run it yourself</h2>
+    <div class="card">
+      <pre><span class="c"># 1. environment</span>
+python3 -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install -r requirements.txt
+
+<span class="c"># 2. generate the corpus + questions (deterministic — no seed needed)</span>
+python generate_data.py
+
+<span class="c"># 3. build retriever, run evaluation, render figures</span>
+python train.py</pre>
+      <div class="cap" style="margin-top:10px">Produces the four PNGs in <code>assets/</code> and the metric summary in <code>results/metrics.json</code>. Wall-time: ~3 seconds. No model training — this is pure information retrieval.</div>
+    </div>
+    <h2>Tweak the difficulty</h2>
+    <div class="card">
+      <pre>QUESTIONS = [
+    {"q": "How many vacation days do full-time staff get per year?",
+     "doc_id": "policy-vacation", "out_of_corpus": False},
+    ...
+    {"q": "What is Aetherline's stock ticker?",
+     "doc_id": None, "out_of_corpus": True},  <span class="c"># adversarial: no answer in corpus</span>
+]</pre>
+      <div class="cap" style="margin-top:10px">Add out-of-corpus questions whose vocabulary overlaps with the corpus (e.g., <code>"How many CargoLens shipments are tracked monthly?"</code>) and watch the hallucination rate climb above 50%.</div>
+    </div>
+  </section>
+</main>
+
+<script>
+  document.querySelectorAll('.sidebar nav a').forEach(function(a){
+    a.addEventListener('click',function(){
+      document.querySelectorAll('.sidebar nav a').forEach(function(x){x.classList.remove('active')});
+      document.querySelectorAll('.panel').forEach(function(p){p.classList.remove('active')});
+      a.classList.add('active');
+      document.getElementById(a.dataset.p).classList.add('active');
+      window.scrollTo({top:0,behavior:'smooth'});
+    });
+  });
+</script>
+</body>
+</html>
